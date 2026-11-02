@@ -44,7 +44,19 @@ cp .env.example .env          # puis remplacer les valeurs "change-me"
 docker compose up --build
 ```
 
-Le frontend répond sur <http://localhost:8080/health>. Les autres services ne sont joignables que depuis le réseau Docker.
+- Frontend : <http://localhost:8080/health>
+- API d'authentification et sa documentation interactive : <http://localhost:8001/docs>
+
+`tracking-service` et `db` ne sont joignables que depuis le réseau Docker.
+
+### Lancer les tests de auth-service
+
+```bash
+cd auth-service
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pytest
+```
 
 Pour tout arrêter : `docker compose down` (ajouter `-v` pour effacer aussi les données de la base).
 
@@ -74,3 +86,4 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 | --- | --- |
 | Claude Code | Création du squelette : arborescence, routes `/health`, `.gitignore`, `.env.example`, ce README |
 | Claude Code | Conteneurisation : Dockerfile, `.dockerignore`, `docker-compose.yml` |
+| Claude Code | `auth-service` : inscription, connexion, JWT, tests |
