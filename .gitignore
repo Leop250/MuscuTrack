@@ -1,0 +1,22 @@
+# Secrets : seul .env.example est versionné
+.env
+.env.*
+!.env.example
+
+# Secrets Kubernetes réels (seul un modèle sera versionné)
+deploy/*secret*.yaml
+!deploy/*secret*.example.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Environnements virtuels
+venv/
+.venv/
+
+# Système et éditeurs
+.DS_Store
+.vscode/
+.idea/
