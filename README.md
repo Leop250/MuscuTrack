@@ -39,7 +39,14 @@ deploy/              Manifestes Kubernetes
 
 ## Lancer en développement
 
-À compléter à l'étape Docker Compose.
+```bash
+cp .env.example .env          # puis remplacer les valeurs "change-me"
+docker compose up --build
+```
+
+Le frontend répond sur <http://localhost:8080/health>. Les autres services ne sont joignables que depuis le réseau Docker.
+
+Pour tout arrêter : `docker compose down` (ajouter `-v` pour effacer aussi les données de la base).
 
 ## Lancer en production
 
@@ -66,3 +73,4 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 | Outil | Parties du projet |
 | --- | --- |
 | Claude Code | Création du squelette : arborescence, routes `/health`, `.gitignore`, `.env.example`, ce README |
+| Claude Code | Conteneurisation : Dockerfile, `.dockerignore`, `docker-compose.yml` |
