@@ -1,0 +1,14 @@
+Dockerfile
+.dockerignore
+.env
+.env.*
+.git
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tests/
+pytest.ini
+requirements-dev.txt
+venv/
+.venv/
+.DS_Store
