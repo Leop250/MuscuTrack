@@ -86,4 +86,4 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 | --- | --- |
 | Claude Code | Création du squelette : arborescence, routes `/health`, `.gitignore`, `.env.example`, ce README |
 | Claude Code | Conteneurisation : Dockerfile, `.dockerignore`, `docker-compose.yml` |
-| Claude Code | `auth-service` : inscription, connexion, JWT, tests |
+| Claude Code | `auth-service` : inscription, connexion, JWT, 2FA TOTP, tests |
