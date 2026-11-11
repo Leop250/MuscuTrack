@@ -158,3 +158,8 @@ def test_lock_expires(client, secret, monkeypatch):
         json={"temporary_token": token, "code": pyotp.TOTP(secret).now()},
     )
     assert response.status_code == 200
+
+
+def test_me_shows_two_factor_enabled(client, access_token, secret):
+    response = client.get("/me", headers=bearer(access_token))
+    assert response.json()["two_factor_enabled"] is True

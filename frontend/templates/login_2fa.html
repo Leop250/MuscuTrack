@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Double authentification{% endblock %}
+{% block content %}
+<p class="tag">Connexion — étape 2/2</p>
+<h1>Code de<br><span class="hl">sécurité</span></h1>
+<section class="card narrow">
+  <h2>Double authentification</h2>
+  <p>Entre le code à 6 chiffres affiché par ton application d'authentification.</p>
+  <form method="post" action="/login/2fa" class="stack">
+    <label>Code <input name="code" inputmode="numeric" pattern="\d{6}" maxlength="6" required autofocus autocomplete="one-time-code"></label>
+    <button>Valider</button>
+  </form>
+  <p class="muted"><a href="/login">Recommencer la connexion</a></p>
+</section>
+{% endblock %}

@@ -13,6 +13,10 @@ class UserResponse(BaseModel):
     email: EmailStr
 
 
+class MeResponse(UserResponse):
+    two_factor_enabled: bool = Field(validation_alias="totp_enabled")
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

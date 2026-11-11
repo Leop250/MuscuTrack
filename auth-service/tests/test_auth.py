@@ -59,3 +59,11 @@ def test_login_rejects_unknown_email_with_same_message(client):
     )
     assert unknown_email.status_code == 401
     assert unknown_email.json() == wrong_password.json()
+
+
+def test_me_requires_token_and_returns_profile(client):
+    assert client.get("/me").status_code == 401
+    client.post("/register", json=ACCOUNT)
+    token = client.post("/login", json=ACCOUNT).json()["access_token"]
+    response = client.get("/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.json() == {"id": 1, "email": ACCOUNT["email"], "two_factor_enabled": False}
