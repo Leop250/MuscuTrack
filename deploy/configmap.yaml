@@ -1,0 +1,12 @@
+# Configuration non sensible, partagée par les services.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: muscutrack-config
+data:
+  POSTGRES_USER: muscutrack
+  POSTGRES_DB: muscutrack
+  POSTGRES_HOST: postgres # nom du Service de la base
+  POSTGRES_PORT: "5432"
+  AUTH_SERVICE_URL: http://auth-service:8000
+  TRACKING_SERVICE_URL: http://tracking-service:8000

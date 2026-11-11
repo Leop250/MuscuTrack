@@ -1,0 +1,103 @@
+# API d'authentification : comptes, JWT, 2FA. Interne au cluster (ClusterIP).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  labels:
+    app: auth-service
+spec:
+  replicas: 2 # si un pod tombe, l'autre continue de répondre
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0 # mise à jour sans interruption : un nouveau pod prêt avant d'en arrêter un
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001 # utilisateur "appuser" créé dans le Dockerfile
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: auth-service
+          image: ghcr.io/leop250/muscutrack-auth-service
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: muscutrack-config
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: muscutrack-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: muscutrack-secrets
+                  key: JWT_SECRET
+          # Au démarrage, le service attend la base : on lui laisse jusqu'à 60 s.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          # Reçoit du trafic seulement quand il répond.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+          # Redémarré automatiquement s'il ne répond plus (auto-réparation).
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          # Avant l'arrêt, le pod continue de répondre 10 s : le temps que Kubernetes
+          # arrête de lui envoyer du trafic (sinon quelques requêtes échouent pendant une mise à jour).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  type: ClusterIP
+  selector:
+    app: auth-service
+  ports:
+    - port: 8000
+      targetPort: http
