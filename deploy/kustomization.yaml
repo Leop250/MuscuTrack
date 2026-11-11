@@ -1,0 +1,28 @@
+# Point d'entrée : kubectl apply -k deploy/
+# Le Secret n'est pas listé ici : il est créé à la main (voir secret.example.yaml),
+# pour qu'aucun mot de passe ne soit versionné.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: muscutrack
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: muscutrack
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres.yaml
+  - auth-service.yaml
+  - tracking-service.yaml
+  - frontend.yaml
+
+# Version des images déployées ; la CI remplace "latest" par le tag Git.
+images:
+  - name: ghcr.io/leop250/muscutrack-auth-service
+    newTag: latest
+  - name: ghcr.io/leop250/muscutrack-tracking-service
+    newTag: latest
+  - name: ghcr.io/leop250/muscutrack-frontend
+    newTag: latest

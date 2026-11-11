@@ -6,12 +6,23 @@ import httpx
 AUTH_URL = os.environ["AUTH_SERVICE_URL"].rstrip("/")
 TRACKING_URL = os.environ["TRACKING_SERVICE_URL"].rstrip("/")
 
-client = httpx.Client(timeout=10)
+# retries : réessaie l'ouverture de connexion si un pod vient de disparaître.
+client = httpx.Client(timeout=10, transport=httpx.HTTPTransport(retries=1))
+
+# Requêtes rejouables sans effet de bord : on peut les renvoyer si la connexion a été coupée.
+IDEMPOTENT_METHODS = {"GET", "DELETE"}
 
 
 def call(base_url: str, method: str, path: str, token: str | None = None, **kwargs) -> httpx.Response:
     headers = {"Authorization": f"Bearer {token}"} if token else {}
-    response = client.request(method, base_url + path, headers=headers, **kwargs)
+    try:
+        response = client.request(method, base_url + path, headers=headers, **kwargs)
+    except httpx.TransportError:
+        # Une connexion gardée ouverte vers un pod arrêté (mise à jour, redémarrage) :
+        # on retente une fois, la nouvelle connexion part vers un pod en service.
+        if method not in IDEMPOTENT_METHODS:
+            raise
+        response = client.request(method, base_url + path, headers=headers, **kwargs)
     # Les erreurs 4xx sont traitées par les pages ; une erreur 5xx affiche la page d'erreur.
     if response.status_code >= 500:
         response.raise_for_status()

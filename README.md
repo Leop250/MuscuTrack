@@ -55,6 +55,7 @@ auth-service/        Service d'authentification
 tracking-service/    Service de suivi sportif
 frontend/            Interface web
 deploy/              Manifestes Kubernetes
+scripts/             Script de déploiement local sur Kubernetes
 .github/workflows/   Pipeline CI/CD
 .env.example         Modèle des variables d'environnement
 ```
@@ -85,9 +86,50 @@ python3 -m venv .venv
 
 Pour tout arrêter : `docker compose down` (ajouter `-v` pour effacer aussi les données de la base).
 
-## Lancer en production
+## Lancer en production (Kubernetes)
 
-À compléter à l'étape Kubernetes.
+Les manifestes sont dans `deploy/` et s'appliquent d'un coup avec Kustomize (intégré à `kubectl`).
+
+| Fichier | Contenu |
+| --- | --- |
+| `namespace.yaml` | Namespace `muscutrack` qui isole l'application |
+| `configmap.yaml` | Configuration non sensible : hôte et nom de la base, URLs des services |
+| `secret.example.yaml` | Modèle du Secret (mot de passe de la base, clé JWT) ; le vrai n'est jamais versionné |
+| `postgres.yaml` | PersistentVolume + PersistentVolumeClaim, Deployment (1 pod, stratégie `Recreate`), Service ClusterIP |
+| `auth-service.yaml`, `tracking-service.yaml` | Deployment (2 pods) + Service ClusterIP, internes au cluster |
+| `frontend.yaml` | Deployment (2 pods) + Service LoadBalancer (port `8081`), seul point d'entrée |
+| `kustomization.yaml` | Liste des manifestes et version des images |
+
+Déploiement sur un cluster local (Docker Desktop → Settings → Kubernetes → Enable) :
+
+```bash
+./scripts/deploy-local.sh
+```
+
+Le script :
+
+1. construit les 3 images avec un **tag unique** (`dev-AAAAMMJJ-HHMMSS`) ; avec un tag fixe comme `latest`, Kubernetes ne verrait pas que l'image a changé et garderait l'ancienne ;
+2. crée le namespace et, s'il n'existe pas, le Secret avec des valeurs aléatoires (`openssl rand`), sans rien écrire sur le disque ;
+3. applique les manifestes (`kubectl kustomize deploy/`) en remplaçant le tag des images, puis attend que chaque déploiement soit prêt.
+
+Application : <http://localhost:8081>
+
+Commandes utiles :
+
+```bash
+kubectl -n muscutrack get pods,svc,pvc        # état du déploiement
+kubectl -n muscutrack logs deploy/frontend    # logs d'un service
+kubectl delete namespace muscutrack           # tout supprimer (les données restent sur le volume)
+```
+
+Ce que montrent les manifestes :
+
+- **Auto-réparation** : chaque service a une `livenessProbe` sur `/health` ; un pod qui ne répond plus est redémarré, un pod supprimé est recréé (`kubectl -n muscutrack delete pod <nom>`).
+- **Persistance vérifiée** : après `kubectl -n muscutrack delete pod -l app=postgres`, les comptes et séances sont toujours là.
+- **Mise à jour sans interruption** : `RollingUpdate` avec `maxUnavailable: 0` et une `readinessProbe` ; un nouveau pod reçoit du trafic seulement quand il répond, et un pod arrêté continue de répondre 10 s (`preStop`) le temps que le trafic soit redirigé. Mesuré : 0 erreur sur ~700 requêtes envoyées pendant un `./scripts/deploy-local.sh`.
+- **Mise à l'échelle** : `kubectl -n muscutrack scale deployment/tracking-service --replicas=4`.
+- **Sécurité** : conteneurs non-root (UID 10001), système de fichiers en lecture seule, aucune capacité Linux ; seul le frontend est exposé.
+
 
 ## Branches
 
@@ -103,7 +145,10 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 
 ## Défis rencontrés
 
-À compléter au fil du projet.
+- **Tag `latest` et Kubernetes** : après une reconstruction, le cluster gardait l'ancienne image (même tag, `imagePullPolicy: IfNotPresent`). Solution : un tag unique par version.
+- **Erreurs pendant les mises à jour** : quelques requêtes échouaient quand un pod s'arrêtait avant que le load balancer ne cesse de lui envoyer du trafic. Solution : `preStop` de 10 s, et le frontend retente une fois les requêtes GET/DELETE dont la connexion a été coupée.
+- **NodePort inaccessible avec Docker Desktop (mode kind)** : le nœud est lui-même un conteneur dont les ports ne sont pas publiés. Solution : Service `LoadBalancer`, que Docker Desktop relie à `localhost`.
+- **`runAsNonRoot`** : Kubernetes ne peut vérifier qu'un conteneur n'est pas root que si l'utilisateur de l'image est numérique ; les Dockerfiles utilisent donc `USER 10001`.
 
 ## Outils d'IA utilisés
 
@@ -114,3 +159,4 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 | Claude Code | `auth-service` : inscription, connexion, JWT, 2FA TOTP, route `/me`, tests |
 | Claude Code | `tracking-service` : séances, séries, statistiques par exercice, records de course, tests |
 | Claude Code | `frontend` : pages Jinja2, gestion du cookie de session, parcours 2FA, CSS, tests |
+| Claude Code | Manifestes Kubernetes (`deploy/`) et section « Lancer en production » |

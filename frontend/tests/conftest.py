@@ -37,7 +37,7 @@ class FakeServices:
 @pytest.fixture
 def services(monkeypatch):
     fake = FakeServices()
-    monkeypatch.setattr(api, "client", httpx.Client(transport=httpx.MockTransport(fake.handler)))
+    monkeypatch.setattr(api, "client", httpx.Client(transport=httpx.MockTransport(lambda request: fake.handler(request))))
     return fake
 
 

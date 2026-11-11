@@ -1,5 +1,7 @@
 import json
 
+import httpx
+
 AUTH = "http://auth-service:8000"
 
 
@@ -101,3 +103,28 @@ def test_service_down_shows_error_page(logged_client, services):
     response = logged_client.get("/account")
     assert response.status_code == 503
     assert "ne répond pas" in response.text
+
+
+def test_get_is_retried_once_after_a_dropped_connection(logged_client, services):
+    calls = []
+    original = services.handler
+
+    def flaky(request):
+        calls.append(request)
+        if len(calls) == 1:
+            raise httpx.RemoteProtocolError("Server disconnected without sending a response.")
+        return original(request)
+
+    services.handler = flaky
+    services.on("GET", f"{AUTH}/me", json={"id": 1, "email": "leo@example.com", "two_factor_enabled": True})
+    assert logged_client.get("/account").status_code == 200
+    assert len(calls) == 2
+
+
+def test_post_is_not_retried_after_a_dropped_connection(client, services):
+    def broken(request):
+        raise httpx.RemoteProtocolError("Server disconnected without sending a response.")
+
+    services.handler = broken
+    response = client.post("/login", data={"email": "leo@example.com", "password": "motdepasse123"})
+    assert response.status_code == 503
