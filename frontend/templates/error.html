@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Erreur{% endblock %}
+{% block content %}
+<p class="tag">Erreur</p>
+<h1><span class="hl">Oups.</span></h1>
+<section class="card narrow">
+  <h2>Service indisponible</h2>
+  <p>{{ message or "Un service ne répond pas. Réessaie dans quelques instants." }}</p>
+  <p><a href="/">Retour à l'accueil</a></p>
+</section>
+{% endblock %}

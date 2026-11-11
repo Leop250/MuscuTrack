@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Activer la 2FA{% endblock %}
+{% block content %}
+<p class="tag">Compte — 2FA</p>
+<h1>Activer la<br><span class="hl">2FA</span></h1>
+<section class="card narrow">
+  <h2>Activer la double authentification</h2>
+  <ol>
+    <li>Scanne ce QR code avec ton application d'authentification.</li>
+    <li>Entre le code à 6 chiffres qu'elle affiche.</li>
+  </ol>
+  {% if setup.qr_code %}<img class="qr" src="{{ setup.qr_code }}" alt="QR code à scanner">{% endif %}
+  <p class="muted">Ou saisis cette clé à la main : <code>{{ setup.secret }}</code></p>
+  <form method="post" action="/account/2fa/verify" class="stack">
+    <input type="hidden" name="secret" value="{{ setup.secret }}">
+    <input type="hidden" name="qr_code" value="{{ setup.qr_code }}">
+    <label>Code <input name="code" inputmode="numeric" pattern="\d{6}" maxlength="6" required autofocus autocomplete="one-time-code"></label>
+    <button>Confirmer</button>
+  </form>
+</section>
+{% endblock %}

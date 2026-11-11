@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Muscu Track{% endblock %} · Muscu Track</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&family=Space+Mono&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Muscu<span>Track</span></a>
+    {% if logged_in %}
+    <nav>
+      <a href="/dashboard">Tableau de bord</a>
+      <a href="/sessions">Séances</a>
+      <a href="/records">Records</a>
+      <a href="/account">Compte</a>
+      <form method="post" action="/logout"><button class="link">Déconnexion</button></form>
+    </nav>
+    {% endif %}
+  </header>
+  <main>
+    {% if error %}<p class="alert">{{ error }}</p>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

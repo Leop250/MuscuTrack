@@ -13,6 +13,35 @@ class UserResponse(BaseModel):
     email: EmailStr
 
 
+class MeResponse(UserResponse):
+    two_factor_enabled: bool = Field(validation_alias="totp_enabled")
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class LoginResponse(BaseModel):
+    two_factor_required: bool = False
+    access_token: str | None = None
+    temporary_token: str | None = None
+    token_type: str = "bearer"
+
+
+class TwoFactorSetupResponse(BaseModel):
+    secret: str
+    otpauth_uri: str
+    qr_code: str
+
+
+class TwoFactorCode(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")
+
+
+class TwoFactorStatus(BaseModel):
+    two_factor_enabled: bool
+
+
+class TwoFactorLogin(TwoFactorCode):
+    temporary_token: str

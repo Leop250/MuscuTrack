@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Inscription{% endblock %}
+{% block content %}
+<div class="split">
+<div>
+  <p class="tag">Nouveau compte — 2 minutes</p>
+  <h1 class="hero">Chaque<br>série<br><span class="hl">compte</span></h1>
+</div>
+<section class="card">
+  <h2>Inscription</h2>
+  <form method="post" action="/register" class="stack">
+    <label>Email <input type="email" name="email" value="{{ email or '' }}" required autofocus autocomplete="email"></label>
+    <label>Mot de passe <small class="muted">(8 caractères minimum)</small>
+      <input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+    <label>Confirmer le mot de passe
+      <input type="password" name="password_confirm" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+    <button>Créer mon compte</button>
+  </form>
+  <p class="muted">Déjà inscrit ? <a href="/login">Se connecter</a></p>
+</section>
+</div>
+{% endblock %}
