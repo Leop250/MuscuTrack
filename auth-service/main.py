@@ -12,6 +12,7 @@ from models import User
 from schemas import (
     Credentials,
     LoginResponse,
+    MeResponse,
     TokenResponse,
     TwoFactorCode,
     TwoFactorLogin,
@@ -99,6 +100,11 @@ def register(credentials: Credentials, db: Session = Depends(get_db)) -> User:
         db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, "Cet email est déjà utilisé")
     db.refresh(user)
+    return user
+
+
+@app.get("/me", response_model=MeResponse)
+def me(user: User = Depends(get_current_user)) -> User:
     return user
 
 

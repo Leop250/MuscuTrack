@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<p class="tag">Tableau de bord — muscu + course</p>
+<div class="actions">
+  <h1>Ta <span class="hl">progression</span></h1>
+  <div class="row">
+  <a class="button" href="/sessions/new">Nouvelle séance</a>
+  <a class="button secondary" href="/records">Ajouter une course</a>
+  </div>
+</div>
+
+<div class="grid">
+  <section class="card">
+    <h2>Dernières séances</h2>
+    {% if sessions %}
+    <ul class="list">
+      {% for s in sessions %}
+      <li><a href="/sessions/{{ s.id }}">{{ s.performed_on }}</a>
+        <span class="muted">{{ s.sets|length }} série{{ 's' if s.sets|length > 1 }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">Aucune séance pour l'instant.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Records de course</h2>
+    {% if best_records %}
+    <table>
+      <thead><tr><th>Distance</th><th>Temps</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in best_records %}
+        <tr><td>{{ DISTANCES[r.distance] }}</td><td class="num">{{ r.duration_seconds|duration }}</td><td>{{ r.performed_on }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted">Aucune course enregistrée.</p>{% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <h2>Charges max par exercice</h2>
+  {% if exercises %}
+  <table>
+    <thead><tr><th>Exercice</th><th>Charge max</th><th>Séries</th><th>Dernière fois</th></tr></thead>
+    <tbody>
+      {% for e in exercises %}
+      <tr><td>{{ e.exercise }}</td><td class="num">{{ e.best_weight_kg|weight }} kg</td><td class="num">{{ e.total_sets }}</td><td>{{ e.last_performed_on }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">Enregistre une séance pour voir tes charges.</p>{% endif %}
+</section>
+{% endblock %}

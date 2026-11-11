@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Séances{% endblock %}
+{% block content %}
+<p class="tag">Carnet de charges — historique</p>
+<div class="actions"><h1>Séances</h1><a class="button" href="/sessions/new">Nouvelle séance</a></div>
+{% for s in sessions %}
+<section class="card">
+  <h2><a href="/sessions/{{ s.id }}">{{ s.performed_on }}</a></h2>
+  {% if s.notes %}<p class="muted">{{ s.notes }}</p>{% endif %}
+  <p>{% for name in s.sets|map(attribute='exercise')|unique %}{{ name }}{{ ', ' if not loop.last }}{% endfor %}</p>
+</section>
+{% else %}
+<p class="muted">Aucune séance pour l'instant.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Séance du {{ session.performed_on }}{% endblock %}
+{% block content %}
+<p class="tag">Carnet de charges — détail</p>
+<h1>Séance du<br><span class="hl">{{ session.performed_on }}</span></h1>
+<section class="card">
+  <h2>{{ session.sets|length }} série{{ 's' if session.sets|length > 1 }}</h2>
+  {% if session.notes %}<p class="muted">{{ session.notes }}</p>{% endif %}
+  <table>
+    <thead><tr><th>#</th><th>Exercice</th><th>Répétitions</th><th>Poids</th></tr></thead>
+    <tbody>
+      {% for s in session.sets %}
+      <tr><td class="num">{{ loop.index }}</td><td>{{ s.exercise }}</td><td class="num">{{ s.reps }}</td><td class="num">{{ s.weight_kg|weight }} kg</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="actions">
+    <a href="/sessions">Retour aux séances</a>
+    <form method="post" action="/sessions/{{ session.id }}/delete"><button class="danger">Supprimer la séance</button></form>
+  </div>
+</section>
+{% endblock %}

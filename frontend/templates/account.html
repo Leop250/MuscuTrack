@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Compte{% endblock %}
+{% block content %}
+<p class="tag">Compte — sécurité</p>
+<h1>Mon <span class="hl">compte</span></h1>
+<section class="card narrow">
+  <h2>Double authentification</h2>
+  <p>Email : <strong>{{ user.email }}</strong></p>
+  {% if user.two_factor_enabled %}
+  <p><span class="badge">Activée</span> Un code à 6 chiffres est demandé à chaque connexion.</p>
+  {% else %}
+  <p>Protège ton compte avec un code à usage unique (Google Authenticator, Aegis, 1Password...).</p>
+  <form method="post" action="/account/2fa/setup"><button>Activer la double authentification</button></form>
+  {% endif %}
+</section>
+{% endblock %}

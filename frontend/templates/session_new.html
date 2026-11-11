@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle séance{% endblock %}
+{% block content %}
+<p class="tag">Carnet de charges — saisie</p>
+<h1>Nouvelle <span class="hl">séance</span></h1>
+<section class="card">
+  <h2>Une ligne = une série</h2>
+  <form method="post" action="/sessions/new" class="stack">
+    <label>Date <input type="date" name="performed_on" value="{{ performed_on }}" required></label>
+    <label>Notes <input name="notes" value="{{ notes or '' }}" maxlength="500" placeholder="Facultatif"></label>
+    <table>
+      <thead><tr><th>Exercice</th><th>Répétitions</th><th>Poids (kg)</th></tr></thead>
+      <tbody id="sets">
+        {% for row in rows %}
+        <tr>
+          <td><input name="exercise" value="{{ row.exercise }}" maxlength="100"{% if loop.first %} placeholder="Squat"{% endif %} aria-label="Exercice"></td>
+          <td><input name="reps" value="{{ row.reps }}" inputmode="numeric" aria-label="Répétitions"></td>
+          <td><input name="weight_kg" value="{{ row.weight_kg }}" inputmode="decimal" aria-label="Poids en kg"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">Une ligne par série. Les lignes vides sont ignorées.</p>
+    <div class="actions">
+      <button type="button" class="secondary" id="add-row">Ajouter une ligne</button>
+      <button>Enregistrer la séance</button>
+    </div>
+  </form>
+</section>
+<script>
+  // Copie la dernière ligne vide ; sans JavaScript, les lignes déjà présentes suffisent.
+  document.getElementById("add-row").addEventListener("click", () => {
+    const body = document.getElementById("sets");
+    const row = body.lastElementChild.cloneNode(true);
+    row.querySelectorAll("input").forEach((input) => (input.value = ""));
+    body.appendChild(row);
+  });
+</script>
+{% endblock %}
