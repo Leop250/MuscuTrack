@@ -1,0 +1,4 @@
+# Labels du runner auto-hébergé (Mac qui héberge le cluster), pour actionlint.
+self-hosted-runner:
+  labels:
+    - muscutrack

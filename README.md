@@ -55,8 +55,8 @@ auth-service/        Service d'authentification
 tracking-service/    Service de suivi sportif
 frontend/            Interface web
 deploy/              Manifestes Kubernetes
-scripts/             Script de déploiement local sur Kubernetes
-.github/workflows/   Pipeline CI/CD
+scripts/             Scripts de déploiement sur Kubernetes (local et CI)
+.github/workflows/   Pipeline CI/CD (ci.yml, release.yml)
 .env.example         Modèle des variables d'environnement
 ```
 
@@ -106,7 +106,7 @@ Déploiement sur un cluster local (Docker Desktop → Settings → Kubernetes �
 ./scripts/deploy-local.sh
 ```
 
-Le script :
+Le script (qui appelle `scripts/deploy.sh`, utilisé aussi par la CI) :
 
 1. construit les 3 images avec un **tag unique** (`dev-AAAAMMJJ-HHMMSS`) ; avec un tag fixe comme `latest`, Kubernetes ne verrait pas que l'image a changé et garderait l'ancienne ;
 2. crée le namespace et, s'il n'existe pas, le Secret avec des valeurs aléatoires (`openssl rand`), sans rien écrire sur le disque ;
@@ -130,6 +130,43 @@ Ce que montrent les manifestes :
 - **Mise à l'échelle** : `kubectl -n muscutrack scale deployment/tracking-service --replicas=4`.
 - **Sécurité** : conteneurs non-root (UID 10001), système de fichiers en lecture seule, aucune capacité Linux ; seul le frontend est exposé.
 
+
+## CI/CD (GitHub Actions)
+
+```mermaid
+flowchart LR
+    P[push develop / PR] --> CI
+    T["tag v*"] --> C{"tag sur main ?"} --> CI
+    subgraph CI[ci.yml]
+      direction TB
+      T1[tests pytest x3] --- B1[build images x3] --- K[kustomize]
+    end
+    CI -->|tag uniquement| PUB[build amd64 + arm64<br>push GHCR] --> DEP[deploy.sh<br>runner sur le Mac] --> H["vérif /health"]
+```
+
+| Workflow | Déclencheur | Étapes |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | push sur `develop`, pull request vers `develop` ou `main` | tests des 3 services, build des 3 images (sans publication), assemblage des manifestes et vérification qu'aucun Secret n'y figure |
+| `.github/workflows/release.yml` | tag `v*` | vérifie que le tag est sur `main` → relance la CI → build multi-architecture et push sur GHCR (`:vX.Y.Z` et `:latest`) → déploiement sur Kubernetes → vérification de `/health` |
+
+Mettre en production :
+
+```bash
+git switch main && git pull
+git tag -a v1.0.0 -m "Version 1.0.0"
+git push origin v1.0.0
+```
+
+Le déploiement tourne sur un **runner auto-hébergé** installé sur le Mac qui héberge le cluster, car le cluster Docker Desktop n'est pas joignable depuis les serveurs de GitHub. Il apparaît dans l'onglet *Environments → production* du dépôt.
+
+Installer le runner (une seule fois) : *Settings → Actions → Runners → New self-hosted runner → macOS / ARM64*, suivre les commandes affichées en ajoutant le label `muscutrack` à l'étape `config.sh` :
+
+```bash
+./config.sh --url https://github.com/Leop250/MuscuTrack --token <jeton affiché par GitHub> --labels muscutrack
+./run.sh    # le runner attend les jobs ; Docker Desktop et Kubernetes doivent tourner
+```
+
+Sécurité : seul le job de déploiement, déclenché par un tag (que seul le propriétaire peut pousser), utilise ce runner ; les pull requests tournent sur les serveurs de GitHub. Le secret du cluster et l'accès à GHCR restent sur le Mac : aucun identifiant n'est stocké dans le dépôt (`GITHUB_TOKEN` est fourni par GitHub pour la durée du job).
 
 ## Branches
 
@@ -159,4 +196,5 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 | Claude Code | `auth-service` : inscription, connexion, JWT, 2FA TOTP, route `/me`, tests |
 | Claude Code | `tracking-service` : séances, séries, statistiques par exercice, records de course, tests |
 | Claude Code | `frontend` : pages Jinja2, gestion du cookie de session, parcours 2FA, CSS, tests |
-| Claude Code | Manifestes Kubernetes (`deploy/`) et section « Lancer en production » |
+| Claude Code | Manifestes Kubernetes (`deploy/`), scripts de déploiement, section « Lancer en production » |
+| Claude Code | Pipeline CI/CD (`.github/workflows/`) et section « CI/CD » |

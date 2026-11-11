@@ -1,0 +1,120 @@
+# Mise en production : déclenchée par la création d'un tag v* (ex. v1.0.0) sur main.
+#   tests -> build des images -> push sur GHCR -> kubectl apply sur le cluster
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+# Jamais deux mises en production en même temps.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/leop250
+
+jobs:
+  check-main:
+    name: Le tag est sur main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier que le commit tagué appartient à main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Le tag ${GITHUB_REF_NAME} ne pointe pas sur un commit de main : pas de mise en production."
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: check-main
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publier ${{ matrix.service }}
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # pousser sur GitHub Container Registry
+    strategy:
+      matrix:
+        service: [auth-service, tracking-service, frontend]
+    steps:
+      - uses: actions/checkout@v5
+
+      # QEMU + Buildx : images pour amd64 (serveurs) et arm64 (Mac Apple Silicon).
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/muscutrack-${{ matrix.service }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/muscutrack-${{ matrix.service }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+
+  deploy:
+    name: Déployer sur Kubernetes
+    needs: publish
+    # Runner installé sur le Mac qui héberge le cluster (Docker Desktop).
+    runs-on: [self-hosted, macOS, muscutrack]
+    environment:
+      name: production
+      url: http://localhost:8081
+    permissions:
+      contents: read
+      packages: read # télécharger les images depuis GHCR
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Choisir le cluster local
+        run: |
+          kubectl config use-context docker-desktop
+          kubectl get nodes
+
+      # Le cluster de Docker Desktop partage les images de Docker :
+      # une fois téléchargées ici, les pods les utilisent sans identifiants GHCR.
+      - name: Télécharger les images publiées
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for service in auth-service tracking-service frontend; do
+            docker pull "${REGISTRY}/muscutrack-${service}:${GITHUB_REF_NAME}"
+          done
+          docker logout ghcr.io
+
+      - name: Déployer
+        run: ./scripts/deploy.sh "${GITHUB_REF_NAME}"
+
+      - name: Vérifier que l'application répond
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:8081/health; then exit 0; fi
+            sleep 2
+          done
+          echo "::error::Le frontend ne répond pas après le déploiement."
+          kubectl -n muscutrack get pods
+          exit 1
