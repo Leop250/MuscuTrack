@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Records de course{% endblock %}
+{% block content %}
+<p class="tag">Course à pied — 5 km → marathon</p>
+<h1>Records de <span class="hl">course</span></h1>
+<section class="card">
+  <h2>Ajouter une course</h2>
+  <form method="post" action="/records" class="row">
+    <label>Distance
+      <select name="distance" required>
+        {% for key, label in DISTANCES.items() %}
+        <option value="{{ key }}" {{ 'selected' if form.distance == key }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Heures <input name="hours" value="{{ form.hours or '' }}" inputmode="numeric" size="2" placeholder="0"></label>
+    <label>Minutes <input name="minutes" value="{{ form.minutes or '' }}" inputmode="numeric" size="2" placeholder="0"></label>
+    <label>Secondes <input name="seconds" value="{{ form.seconds or '' }}" inputmode="numeric" size="2" placeholder="0"></label>
+    <label>Date <input type="date" name="performed_on" value="{{ form.performed_on }}" required></label>
+    <button>Ajouter</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Historique</h2>
+  {% if records %}
+  <table>
+    <thead><tr><th>Date</th><th>Distance</th><th>Temps</th><th></th></tr></thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r.performed_on }}</td>
+        <td>{{ DISTANCES[r.distance] }}</td>
+        <td class="num">{{ r.duration_seconds|duration }}{% if r.id in best_ids %} <span class="badge">Record</span>{% endif %}</td>
+        <td><form method="post" action="/records/{{ r.id }}/delete"><button class="link danger">Supprimer</button></form></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">Aucune course enregistrée.</p>{% endif %}
+</section>
+{% endblock %}

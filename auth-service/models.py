@@ -15,3 +15,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    totp_secret: Mapped[str | None] = mapped_column(String(64))
+    totp_enabled: Mapped[bool] = mapped_column(default=False)
+    totp_failed_attempts: Mapped[int] = mapped_column(default=0)
+    totp_locked_until: Mapped[int | None]
