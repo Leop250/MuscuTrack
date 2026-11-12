@@ -187,14 +187,5 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 - **NodePort inaccessible avec Docker Desktop (mode kind)** : le nœud est lui-même un conteneur dont les ports ne sont pas publiés. Solution : Service `LoadBalancer`, que Docker Desktop relie à `localhost`.
 - **`runAsNonRoot`** : Kubernetes ne peut vérifier qu'un conteneur n'est pas root que si l'utilisateur de l'image est numérique ; les Dockerfiles utilisent donc `USER 10001`.
 
-## Outils d'IA utilisés
 
-| Outil | Parties du projet |
-| --- | --- |
-| Claude Code | Création du squelette : arborescence, routes `/health`, `.gitignore`, `.env.example`, ce README |
-| Claude Code | Conteneurisation : Dockerfile, `.dockerignore`, `docker-compose.yml` |
-| Claude Code | `auth-service` : inscription, connexion, JWT, 2FA TOTP, route `/me`, tests |
-| Claude Code | `tracking-service` : séances, séries, statistiques par exercice, records de course, tests |
-| Claude Code | `frontend` : pages Jinja2, gestion du cookie de session, parcours 2FA, CSS, tests |
-| Claude Code | Manifestes Kubernetes (`deploy/`), scripts de déploiement, section « Lancer en production » |
-| Claude Code | Pipeline CI/CD (`.github/workflows/`) et section « CI/CD » |
+outils utilisé 
