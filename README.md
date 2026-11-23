@@ -189,3 +189,8 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 
 
 outils utilisé 
+| Outil | Parties du projet |
+| --- | --- |
+| Claude Code | Création du squelette : arborescence, routes `/health`, `.gitignore`, `.env.example`, ce README |
+| Claude Code | `auth-service` : inscription, connexion, JWT, 2FA TOTP, route `/me`, tests |
+| Claude Code | `frontend` : pages Jinja2, gestion du cookie de session, parcours 2FA, CSS, tests, rédaction du README |
