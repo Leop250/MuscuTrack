@@ -188,11 +188,9 @@ Les commits suivent la convention `feat:`, `fix:`, `docs:`, `chore:`...
 - **`runAsNonRoot`** : Kubernetes ne peut vérifier qu'un conteneur n'est pas root que si l'utilisateur de l'image est numérique ; les Dockerfiles utilisent donc `USER 10001`.
 
 
-<<<<<<< Updated upstream
 outils utilisé 
 | Outil | Parties du projet |
 | --- | --- |
 | Claude Code | Création du squelette : arborescence, routes `/health`, `.gitignore`, `.env.example`, ce README |
 | Claude Code | `auth-service` : inscription, connexion, JWT, 2FA TOTP, route `/me`, tests |
 | Claude Code | `frontend` : pages Jinja2, gestion du cookie de session, parcours 2FA, CSS, tests, rédaction du README |
->>>>>>> Stashed changes
